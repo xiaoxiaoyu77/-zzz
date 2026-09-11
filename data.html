@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>数据与模型 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="8 组可直接使用的教学数据集（支持下载 CSV），以及一个交互式统计方法选择器与核心模型速查。">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header data-topbar></header>
+
+<main class="wrap page" role="main">
+
+  <div class="lab-head">
+    <div>
+      <h1>数据与模型</h1>
+      <p>这里有两样东西：<b>能直接上手的数据集</b>（每个都标注了适用章节，可下载 CSV 做作业），
+        以及一个<b>方法选择器</b>——回答两个问题，它告诉你该用哪个统计方法、为什么、需要什么前提条件。</p>
+    </div>
+    <span class="spacer"></span>
+    <a class="btn" href="lab.html?m=data-lab">打开数据工作台 →</a>
+  </div>
+
+  <!-- ============ 方法选择器 ============ -->
+  <section class="card pad-l mt18" id="picker">
+    <div class="card-h">
+      <h2>该用什么方法？</h2>
+      <span class="spacer"></span>
+      <span class="badge purple">交互式方法选择器</span>
+    </div>
+    <div class="grid g2">
+      <div>
+        <div class="ctrl" style="border-top:0;padding-top:0">
+          <div class="ctrl-h"><span class="lab">第 1 步 · 你的研究目的是什么？</span></div>
+          <div class="chips" id="p1" style="flex-direction:column;align-items:stretch;gap:6px"></div>
+        </div>
+        <div id="p2Box" hidden>
+          <div class="ctrl">
+            <div class="ctrl-h"><span class="lab" id="p2Lab">第 2 步 · 补充条件</span></div>
+            <div class="chips" id="p2" style="flex-direction:column;align-items:stretch;gap:6px"></div>
+          </div>
+        </div>
+      </div>
+      <div id="pOut">
+        <div class="empty">
+          从左边选择你的研究目的<br>
+          <span class="fs12">不确定也没关系，选最接近的那一项，答案会说明边界条件</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 数据集 ============ -->
+  <section class="mt24">
+    <div class="sect-title">教学数据集 <b>共 8 组 · 可直接下载 CSV 用于作业</b></div>
+    <div class="grid g2" id="dsGrid"></div>
+  </section>
+
+  <!-- ============ 模型速查 ============ -->
+  <section class="mt24">
+    <div class="sect-title">核心模型速查 <b>记住每个模型「解决什么问题」，比背公式重要</b></div>
+    <div class="grid g2" id="modelGrid"></div>
+  </section>
+
+  <!-- ============ 数据质量 ============ -->
+  <section class="card pad-l mt24">
+    <div class="card-h"><h2>分析前的固定动作：数据质量检查</h2><span class="spacer"></span>
+      <span class="badge warn">跳过这步，后面全白做</span></div>
+    <div class="grid g3">
+      <div class="callout warn"><span class="ttl">① 缺失值</span>占多少？是 MCAR、MAR 还是 MNAR？删除、单一插补还是多重插补，取决于机制而非比例。</div>
+      <div class="callout warn"><span class="ttl">② 异常值</span>是录入错误还是真实极端情况？先回查原始记录，再决定保留、修正还是单独分析。</div>
+      <div class="callout warn"><span class="ttl">③ 分布形态</span>严重偏态会同时影响均值与显著性检验。考虑对数变换，或改用非参数方法。</div>
+      <div class="callout warn"><span class="ttl">④ 逻辑一致性</span>年龄 200、满意度 8（量表只到 5）、同一题前后矛盾——这类错误最容易毁掉结论。</div>
+      <div class="callout warn"><span class="ttl">⑤ 编码方向</span>反向计分题是否已反转？忘记反转会让信度虚低、相关系数反号。</div>
+      <div class="callout warn"><span class="ttl">⑥ 观测独立性</span>同一用户多次记录被当成独立样本，会让标准误被严重低估、p 值虚假变小。</div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-footer></footer>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/content-a.js"></script>
+<script src="assets/js/content-b.js"></script>
+<script src="assets/js/library.js"></script>
+<script src="assets/js/site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var U = window.SITE_UI, esc = U.esc, ST = window.ST;
+  var DS = window.DATASETS || [], CH = window.CHAPTERS || [], MOD = window.LAB_MODULES || [];
+
+  function chapterOf(no) { return CH.filter(function (c) { return c.no === no; })[0]; }
+  function moduleOf(id) { return MOD.filter(function (m) { return m.id === id; })[0]; }
+
+  /* =======================================================
+     一、方法选择器
+     ======================================================= */
+  var P1 = [
+    { v: "describe", t: "描述这一批数据长什么样" },
+    { v: "infer1", t: "用一个样本推断总体水平" },
+    { v: "mean2", t: "比较两组 / 两种条件的均值" },
+    { v: "mean3", t: "比较三组及以上均值" },
+    { v: "cat2", t: "看两个定类变量有没有关联" },
+    { v: "rel", t: "看两个变量的关系 / 做预测" },
+    { v: "nonpara", t: "数据少、偏态或只有等级顺序" },
+    { v: "scale", t: "检查量表质量（信度 / 效度）" },
+    { v: "plan", t: "研究开始前：要多少样本量" }
+  ];
+
+  // 第二步问题
+  var P2Q = {
+    mean2: {
+      lab: "第 2 步 · 这两组是什么关系？",
+      opts: [
+        { v: "indep", t: "两组是不同的人（独立样本）" },
+        { v: "paired", t: "同一批人的两次测量（配对 / 重复测量）" },
+        { v: "assume", t: "不确定，数据是连续数值" }
+      ]
+    },
+    mean3: {
+      lab: "第 2 步 · 分组情况是？",
+      opts: [
+        { v: "oneway", t: "一个因素，多个不同组（独立）" },
+        { v: "rm", t: "同一批人在多个时间点 / 条件下测量" },
+        { v: "two", t: "两个因素同时考虑，还想看交互作用" }
+      ]
+    },
+    rel: {
+      lab: "第 2 步 · 你是想描述关系还是预测？",
+      opts: [
+        { v: "corr", t: "只想看关系强度与方向" },
+        { v: "reg1", t: "想用一个变量预测另一个" },
+        { v: "regk", t: "想同时用多个变量预测，并比较各自贡献" }
+      ]
+    },
+    cat2: {
+      lab: "第 2 步 · 表格情况是？",
+      opts: [
+        { v: "ok", t: "2×2 或更大的列联表，频数都够大" },
+        { v: "small", t: "有格子频数很小（期望频数 < 5）" }
+      ]
+    },
+    nonpara: {
+      lab: "第 2 步 · 数据是怎么来的？",
+      opts: [
+        { v: "indep2", t: "两组独立样本" },
+        { v: "paired2", t: "配对 / 同一批人两次测量" },
+        { v: "k3", t: "三组及以上，独立" },
+        { v: "rm2", t: "三组及以上，重复测量" }
+      ]
+    },
+    infer1: {
+      lab: "第 2 步 · 你要推断的是什么？",
+      opts: [
+        { v: "mean", t: "均值（连续数据，如时长、分数）" },
+        { v: "prop", t: "比例 / 百分比（如支持率）" }
+      ]
+    }
+  };
+
+  // 决策表：[场景] → 推荐
+  var RULES = {
+    describe: {
+      name: "描述统计 + 可视化", tag: "描述统计",
+      why: "不涉及推断，目标是让读者三分钟内看懂这批数据的中心位置、离散程度与分布形态。",
+      do: "报告 均值 ± 标准差、中位数、四分位距、最小值最大值、偏度；配直方图与箱线图。偏态分布下均值与中位数要同时报告。",
+      warn: "定类变量只能报频数与百分比，不能算均值。",
+      ch: 3, lab: "center-spread"
+    },
+    "infer1|mean": {
+      name: "单样本 t 检验 / 单样本均值的置信区间", tag: "参数估计 · 假设检验",
+      why: "只有一个样本，要用它估计总体均值，或检验总体均值是否等于某个参照值。",
+      do: "先算 x̄ 与 s/√n，得到 t 值；t(n−1) 分布给出 p 值与 95% 置信区间。",
+      warn: "σ 未知时用 t 而不是 z；样本量很小且严重偏态时改用非参数方法。",
+      ch: 8, lab: "ttest"
+    },
+    "infer1|prop": {
+      name: "单样本比例检验 / Wilson 置信区间", tag: "参数估计",
+      why: "总体是二分变量（支持/不支持），要估计支持率或检验它是否等于某个比例。",
+      do: "样本量足够大用正态近似；p 接近 0 或 1、样本量小时用 Wilson 区间，覆盖率更准。",
+      warn: "Wald 区间在小样本或极端比例下会明显失真，别直接用。",
+      ch: 7, lab: "ci"
+    },
+    "mean2|indep": {
+      name: "独立样本 t 检验（含 Welch 校正）", tag: "均值比较",
+      why: "两组互不相干的人，比较其均值是否有差异。",
+      do: "先做方差齐性判断：齐则用合并方差 t；不齐或样本量悬殊则用 Welch 校正。报告 t、df、p、Cohen's d 与均值差的置信区间。",
+      warn: "对同一批人用独立样本 t，会丢掉配对带来的精度，容易把显著结果做成不显著。",
+      ch: 8, lab: "ttest"
+    },
+    "mean2|paired": {
+      name: "配对样本 t 检验", tag: "均值比较",
+      why: "同一批人前后两次测量，或严格配对的两组。本质是对「差值」做单样本检验。",
+      do: "先算每对的差值 d，再检验均值差是否为 0。个体差异在差值中被消掉，噪音下降，效能更高。",
+      warn: "同一份数据用独立样本检验可能 p = .15，改用配对检验后 p = .003——设计决定方法，不能随意挑。",
+      ch: 8, lab: "ttest"
+    },
+    "mean2|assume": {
+      name: "先判断设计，再选 t 检验", tag: "均值比较",
+      why: "两组均值比较的关键分岔，在于观测是否互相独立。",
+      do: "两组是不同的人 → 独立样本 t；同一批人两次测量 → 配对 t。判断依据是数据怎么收集的，不是哪个结果更好看。",
+      warn: "选错设计会让结论反向。",
+      ch: 8, lab: "ttest"
+    },
+    "mean3|oneway": {
+      name: "单因素方差分析 + 事后多重比较", tag: "方差分析",
+      why: "三组及以上均值比较。反复做两两 t 检验会让假阳性率迅速膨胀。",
+      do: "F 检验回答「至少有一组不同」；再用 Tukey HSD 等事后比较定位差异，并报告 η²。",
+      warn: "F 显著不等于每组都不同；必须做事后比较，且不能用多次 t 检验替代。",
+      ch: 9, lab: "anova"
+    },
+    "mean3|rm": {
+      name: "重复测量方差分析", tag: "方差分析",
+      why: "同一批人在多个时间点测量，观测之间不独立。",
+      do: "把个体差异从误差中分离出来，检验是否随时间变化；需检查球形性假设。",
+      warn: "把重复测量当独立组分析，会低估误差、夸大显著性。",
+      ch: 9, lab: "anova"
+    },
+    "mean3|two": {
+      name: "双因素方差分析（含交互作用）", tag: "方差分析",
+      why: "两个自变量同时影响因变量，且一个因素的作用可能随另一个因素变化。",
+      do: "检验两个主效应与一个交互效应。交互显著时，不要单独解读主效应，而应在各水平下分别比较。",
+      warn: "交互作用显著却只报主效应，是常见误读。",
+      ch: 9, lab: "anova"
+    },
+    "cat2|ok": {
+      name: "卡方独立性检验 + Cramér's V + 标准化残差", tag: "卡方检验",
+      why: "两个定类变量是否有关联（如平台偏好与年龄段）。",
+      do: "χ² 判断有没有关联；Cramér's V 给出强度；标准化残差 |值| > 2 定位是哪几个格子造成的偏离。",
+      warn: "χ² 显著不等于关联强——样本很大时，很弱的关联也会显著。",
+      ch: 12, lab: "chi2"
+    },
+    "cat2|small": {
+      name: "Fisher 精确检验", tag: "卡方检验",
+      why: "期望频数过小（一般 < 5）时，卡方近似不成立。",
+      do: "直接枚举所有可能的表，精确计算概率，不依赖渐近近似。2×2 表最常用。",
+      warn: "小样本下卡方检验的 p 值不可信，不要照读软件输出。",
+      ch: 12, lab: "chi2"
+    },
+    "rel|corr": {
+      name: "皮尔逊相关 / 斯皮尔曼等级相关", tag: "相关分析",
+      why: "只想描述两个变量线性关系的方向与强度。",
+      do: "报告 r、r²（解释的变异比例）、p 与置信区间。定序变量或存在极端值时改用斯皮尔曼。",
+      warn: "r = .5 只解释 25% 的变异；还要检查散点图，r 相同的四组数据图形可能完全不同。",
+      ch: 10, lab: "corr-reg"
+    },
+    "rel|reg1": {
+      name: "一元线性回归（最小二乘法）", tag: "回归分析",
+      why: "用一个自变量预测一个连续因变量，并量化每个单位变化带来的平均变化。",
+      do: "拟合 ŷ = a + bx，报告 b 的标准误与置信区间、R²、残差诊断（线性、等方差、正态、独立性）。",
+      warn: "回归系数 b 与相关系数 r 不是一回事：r 无量纲，b 有量纲。观察数据得到的回归不能说因果。",
+      ch: 11, lab: "corr-reg"
+    },
+    "rel|regk": {
+      name: "多元线性回归 + 共线性诊断", tag: "回归分析",
+      why: "同时纳入多个自变量，看每个变量在控制其他变量后的净贡献。",
+      do: "报告各系数与标准误、调整 R²、VIF（> 10 提示共线性严重）、残差图。定类自变量需转成虚拟变量。",
+      warn: "共线性会让系数符号翻转、标准误膨胀；自变量的「重要性」不能只按系数大小排序。",
+      ch: 11, lab: "multi-reg"
+    },
+    "nonpara|indep2": {
+      name: "Mann-Whitney U 检验", tag: "非参数",
+      why: "两组独立样本，但数据是小样本、明显偏态、或只有等级顺序。",
+      do: "用秩代替原始值，检验两组分布位置是否相同。报告 U、p 与秩平均。",
+      warn: "非参数检验功效略低，但重尾小样本下反而更稳；不要因为「更严格」就一律用它。",
+      ch: 15, lab: "nonparam"
+    },
+    "nonpara|paired2": {
+      name: "Wilcoxon 符号秩检验", tag: "非参数",
+      why: "配对设计，但差值的分布不合适做 t 检验。",
+      do: "对差值的绝对值排秩，考虑正负号方向，检验中位数差是否为 0。",
+      warn: "配对设计却用独立样本的非参数方法，会损失配对信息。",
+      ch: 15, lab: "nonparam"
+    },
+    "nonpara|k3": {
+      name: "Kruskal-Wallis 检验", tag: "非参数",
+      why: "三组及以上独立样本的非参数版本，对应单因素方差分析。",
+      do: "对所有观测统一排秩，比较各组平均秩。显著后需做事后两两比较并校正。",
+      warn: "显著只说明至少一组不同，仍需事后比较定位。",
+      ch: 15, lab: "nonparam"
+    },
+    "nonpara|rm2": {
+      name: "Friedman 检验", tag: "非参数",
+      why: "重复测量设计的非参数版本，对应重复测量方差分析。",
+      do: "在每个区组内排秩，比较各处理条件的平均秩。",
+      warn: "只在每个受试者都接受了所有条件时才适用。",
+      ch: 15, lab: "nonparam"
+    },
+    scale: {
+      name: "Cronbach's α + 项目分析 + 因子分析", tag: "测量质量",
+      why: "确认量表测得一致、且真的测到了目标构念。",
+      do: "α 看内部一致性（≥ .70 可接受）；项目—总分相关看每题贡献；探索性 / 验证性因子分析确认维度结构。",
+      warn: "α 高不等于单维；删题能提高 α 但可能损害内容覆盖；忘记反向计分会让 α 虚低。",
+      ch: 13, lab: "reliability"
+    },
+    plan: {
+      name: "样本量与统计功效分析", tag: "研究设计",
+      why: "在研究开始前确定需要多少样本，避免做完了才发现功效不足。",
+      do: "确定四个量中的三个即可求第四个：效应量、显著性水平 α、功效 1−β、样本量 n。一般要求功效 ≥ .80。",
+      warn: "事后再补算功效没有意义；「不显著」也可能是样本量不够，而不是没有效果。",
+      ch: 7, lab: "power"
+    }
+  };
+
+  var sel1 = null, sel2 = null;
+  var e1 = U.$("#p1"), e2 = U.$("#p2"), e2Box = U.$("#p2Box"), out = U.$("#pOut");
+
+  e1.innerHTML = P1.map(function (o) {
+    return '<button class="chip" data-v="' + o.v + '" style="text-align:left;font-family:var(--sans)">' + o.t + "</button>";
+  }).join("");
+
+  function renderOut() {
+    // 需要第二步但还没选：给出明确指引，而不是空白
+    if (P2Q[sel1] && !sel2) {
+      out.innerHTML = '<div class="empty">这一步还差一个信息<br>' +
+        '<span class="fs12">请在上方完成「' + esc(P2Q[sel1].lab.replace(/^第 2 步 · /, "")) + '」的选择</span></div>';
+      return;
+    }
+    var key = sel2 ? sel1 + "|" + sel2 : sel1;
+    var r = RULES[key] || RULES[sel1];
+    if (!r) { out.innerHTML = '<div class="empty">请先在左侧选择你的研究目的</div>'; return; }
+    var ch = chapterOf(r.ch), m = r.lab ? moduleOf(r.lab) : null;
+    out.innerHTML =
+      '<div class="verdict"><div class="row" style="gap:8px;margin-bottom:6px">' +
+      '<span class="badge acc">' + esc(r.tag) + "</span>" +
+      (ch ? '<span class="badge">' + (ch.extra ? esc(ch.title.split(" · ")[0]) : "第 " + ch.no + " 章") + "</span>" : "") + "</div>" +
+      '<div class="big" style="font-size:17px">' + esc(r.name) + "</div>" +
+      '<div class="human"><b>为什么是它：</b>' + esc(r.why) + "</div></div>" +
+      '<div class="callout info mt14"><span class="ttl">具体怎么做</span>' + esc(r.do) + "</div>" +
+      '<div class="callout warn"><span class="ttl">容易出错的地方</span>' + esc(r.warn) + "</div>" +
+      '<div class="row mt14">' +
+      (ch ? '<a class="btn sm" href="chapters.html#' + ch.id + '">看' + (ch.extra ? "拓展专题" : "第 " + ch.no + " 章") + "讲解</a>" : "") +
+      (m ? '<a class="btn sm primary" href="lab.html?m=' + m.id + '">动手做：实验 ' + m.no + " · " + esc(m.name) + "</a>" : "") +
+      "</div>";
+  }
+
+  e1.addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    sel1 = b.dataset.v; sel2 = null;
+    U.$$("#p1 .chip").forEach(function (x) { x.classList.toggle("active", x === b); });
+    if (P2Q[sel1]) {
+      e2Box.hidden = false;
+      U.$("#p2Lab").textContent = P2Q[sel1].lab;
+      e2.innerHTML = P2Q[sel1].opts.map(function (o) {
+        return '<button class="chip" data-v="' + o.v + '" style="text-align:left;font-family:var(--sans)">' + o.t + "</button>";
+      }).join("");
+      renderOut();
+    } else {
+      e2Box.hidden = true;
+      renderOut();
+    }
+  });
+
+  e2.addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    sel2 = b.dataset.v;
+    U.$$("#p2 .chip").forEach(function (x) { x.classList.toggle("active", x === b); });
+    renderOut();
+  });
+
+  /* =======================================================
+     二、数据集
+     ======================================================= */
+  /* 与数据工作台一致的确定性生成，保证两处数字相同 */
+  function makeArticles(n) {
+    var r = new ST.RNG(20260911), rows = [];
+    for (var i = 0; i < n; i++) {
+      var fans = Math.max(0.5, r.normal(18, 11));
+      var words = Math.max(200, Math.round(r.normal(1800, 620)));
+      var img = r.uniform(0, 1) < 0.62 ? 1 : 0;
+      var read = Math.max(0.2, +(3.2 + 0.042 * fans + 1.35 * img + r.normal(0, 2.4)).toFixed(2));
+      var likes = Math.max(0, Math.round(read * 12 + r.normal(0, 22)));
+      rows.push([i + 1, +fans.toFixed(1), words, img, read, likes]);
+    }
+    return rows;
+  }
+  function makeLikert(n, k) {
+    var r = new ST.RNG(31415), rows = [];
+    for (var i = 0; i < n; i++) {
+      var theta = r.normal(0, 1), row = [i + 1];
+      for (var j = 0; j < k; j++) {
+        var v = Math.round(3.0 + (0.67 * theta + 0.74 * r.normal(0, 1)) * 0.95);
+        row.push(Math.max(1, Math.min(5, v)));
+      }
+      rows.push(row);
+    }
+    return rows;
+  }
+  function makeLognormal(n) {
+    var r = new ST.RNG(271828), rows = [];
+    for (var i = 0; i < n; i++) rows.push([i + 1, Math.round(Math.exp(r.normal(3.1, 0.95)))]);
+    return rows;
+  }
+  /* 受众媒介使用行为（第 14 章聚类分析用），与实验模块保持一致的确定性生成 */
+  function makeAudience() {
+    var spec = [
+      { mu: [62, 6.2], sd: [7, 1.05], n: 22 },
+      { mu: [58, 1.0], sd: [7, 0.42], n: 18 },
+      { mu: [17, 5.4], sd: [5, 1.05], n: 20 },
+      { mu: [20, 0.7], sd: [5, 0.34], n: 14 }
+    ];
+    var r = new ST.RNG(20260913), rows = [];
+    spec.forEach(function (sp) {
+      for (var i = 0; i < sp.n; i++) {
+        var x = Math.max(2, Math.min(92, sp.mu[0] + r.normal(0, 1) * sp.sd[0]));
+        var y = Math.max(0, Math.min(10, sp.mu[1] + r.normal(0, 1) * sp.sd[1]));
+        rows.push([rows.length + 1, +x.toFixed(1), +y.toFixed(2)]);
+      }
+    });
+    rows.push([rows.length + 1, 89.5, 9.4]);
+    rows.push([rows.length + 1, 3.2, 0.15]);
+    return rows;
+  }
+  /* 同一批被试的 A / B 两种剪辑策略完成率（分组 t 检验用） */
+  function makePaired() {
+    var r = new ST.RNG(161803), rows = [];
+    for (var i = 0; i < 12; i++) {
+      var ability = r.normal(0, 1);
+      var a = 55 + 6.5 * ability + r.normal(0, 4.2);
+      var b = a + 7.4 + r.normal(0, 3.4);
+      rows.push([i + 1, +Math.max(20, Math.min(98, a)).toFixed(1), +Math.max(20, Math.min(98, b)).toFixed(1)]);
+    }
+    return rows;
+  }
+
+  function tableOf(ds) {
+    if (ds.table) {
+      var t = ds.table;
+      return '<div class="tbl-wrap"><table class="tbl mini"><thead><tr><th>' + t.rows.length + '×' + t.cols.length +
+        "</th>" + t.cols.map(function (c) { return "<th>" + esc(c) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+        t.data.map(function (row, i) {
+          return "<tr><td class='tx'>" + esc(t.rows[i]) + "</td>" + row.map(function (v) { return "<td>" + v + "</td>"; }).join("") + "</tr>";
+        }).join("") + "</tbody></table></div>";
+    }
+    var head, rows, note = "";
+    if (ds.gen === "articles") { head = ["id", "粉丝(万)", "字数", "配图", "阅读(万)", "点赞"]; rows = makeArticles(40); note = "显示前 40 行，完整数据共 40 行"; }
+    else if (ds.gen === "likert") { head = ["id"].concat([1,2,3,4,5,6,7,8].map(function (i) { return "Q" + i; })); rows = makeLikert(60, 8); note = "Q6 为反向计分题，使用前需反转"; }
+    else if (ds.gen === "lognormal") { head = ["id", "分钟"]; rows = makeLognormal(120); note = "分布严重右偏，适合演示均值陷阱"; }
+    else if (ds.gen === "audience") { head = ["id", "使用时长(分钟)", "分享次数(次)"]; rows = makeAudience(); note = "两个变量量纲差异极大，未标准化时欧氏距离会被时长主导"; }
+    else if (ds.gen === "paired") { head = ["id", "A组完成率(%)", "B组完成率(%)"]; rows = makePaired(); note = "同一批被试的配对数据，可对比独立检验与配对检验"; }
+    else if (ds.groups) {
+      var gs = Object.keys(ds.groups);
+      head = ["#"].concat(gs);
+      var maxLen = Math.max.apply(null, gs.map(function (g) { return ds.groups[g].length; }));
+      rows = [];
+      for (var i = 0; i < maxLen; i++) rows.push([i + 1].concat(gs.map(function (g) { return ds.groups[g][i] === undefined ? "—" : ds.groups[g][i]; })));
+    } else {
+      head = ["id", "score"]; rows = ds.data.map(function (v, i) { return [i + 1, v]; });
+    }
+    // 只显示前 12 行，避免页面过长
+    var show = rows.slice(0, 12);
+    return '<div class="tbl-wrap"><table class="tbl mini"><thead><tr><th>' + head[0] + "</th>" +
+      head.slice(1).map(function (h) { return "<th>" + esc(h) + "</th>"; }).join("") + "</tr></thead><tbody>" +
+      show.map(function (r) {
+        return "<tr><td class='tx'>" + r[0] + "</td>" + r.slice(1).map(function (v) { return "<td>" + v + "</td>"; }).join("") + "</tr>";
+      }).join("") + "</tbody></table></div>" +
+      '<div class="note mt10">' + (note ? note + " · " : "") + "预览 " + show.length + " / " + rows.length + " 行</div>";
+  }
+
+  function csvOf(ds) {
+    var head, rows;
+    if (ds.table) {
+      var t = ds.table;
+      head = ["类别"].concat(t.cols);
+      rows = t.data.map(function (r, i) { return [t.rows[i]].concat(r); });
+    } else if (ds.gen === "articles") { head = ["id", "fans_w", "words", "image", "read_w", "likes"]; rows = makeArticles(40); }
+    else if (ds.gen === "likert") { head = ["id"].concat([1,2,3,4,5,6,7,8].map(function (i) { return "Q" + i; })); rows = makeLikert(60, 8); }
+    else if (ds.gen === "lognormal") { head = ["id", "minutes"]; rows = makeLognormal(120); }
+    else if (ds.groups) {
+      var gs = Object.keys(ds.groups);
+      head = ["第几篇"].concat(gs);
+      var maxLen = Math.max.apply(null, gs.map(function (g) { return ds.groups[g].length; }));
+      rows = [];
+      for (var i = 0; i < maxLen; i++) rows.push([i + 1].concat(gs.map(function (g) { return ds.groups[g][i] === undefined ? "" : ds.groups[g][i]; })));
+    } else { head = ["id", "score"]; rows = ds.data.map(function (v, i) { return [i + 1, v]; }); }
+    return "\uFEFF" + [head].concat(rows).map(function (r) { return r.join(","); }).join("\n");
+  }
+
+  function download(name, text) {
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+  }
+
+  var DS_LAB = { ds1: "ttest", ds2: "anova", ds3: "chi2", ds4: "multi-reg", ds5: "reliability", ds6: "center-spread", ds7: "cluster", ds8: "ttest" };
+  var DS_CH = { ds1: [8], ds2: [9], ds3: [12], ds4: [10, 11], ds5: [13], ds6: [3, 4], ds7: [14], ds8: [8] };
+
+  U.$("#dsGrid").innerHTML = DS.map(function (ds) {
+    var m = moduleOf(DS_LAB[ds.id]);
+    var chs = (DS_CH[ds.id] || []).map(chapterOf).filter(Boolean);
+    return '<article class="card" id="' + ds.id + '">' +
+      '<div class="card-h"><h2 style="font-size:16px">' + esc(ds.name) + "</h2><span class=\"spacer\"></span>" +
+      '<span class="badge acc">n = ' + ds.n + "</span></div>" +
+      '<div class="row" style="gap:6px;margin-bottom:10px">' +
+      '<span class="badge">' + esc(ds.type) + "</span>" +
+      '<span class="badge purple">' + esc(ds.use) + "</span></div>" +
+      '<div class="mut fs13" style="line-height:1.75">' + esc(ds.desc) + "</div>" +
+      '<div class="dashed"></div>' + tableOf(ds) +
+      '<div class="row mt14">' +
+      '<button class="btn sm primary" data-dl="' + ds.id + '">下载 CSV</button>' +
+      (m ? '<a class="btn sm" href="lab.html?m=' + m.id + '">在实验中打开</a>' : "") +
+      chs.map(function (c) { return '<a class="btn sm ghost" href="chapters.html#' + c.id + '">' + (c.extra ? esc(c.title.split(" · ")[0]) : "第 " + c.no + " 章") + "</a>"; }).join("") +
+      "</div></article>";
+  }).join("");
+
+  U.$("#dsGrid").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-dl]"); if (!b) return;
+    var ds = DS.filter(function (x) { return x.id === b.dataset.dl; })[0];
+    if (ds) {
+      download(ds.name.replace(/[\/\\:*?"<>|]/g, "") + ".csv", csvOf(ds));
+      U.toast("已下载「" + ds.name + "」CSV 文件");
+    }
+  });
+
+  /* =======================================================
+     三、模型速查
+     ======================================================= */
+  var MODELS = [
+    {
+      t: "抽样分布与标准误", f: 'SE(x̄) = <span class="frac"><span class="num">s</span><span class="den">√n</span></span>',
+      d: "样本均值的分布叫抽样分布，它的标准差叫标准误。它衡量的是「换一个样本，估计值会飘多远」，不是个体的差异。",
+      u: "任何推断的起点。样本量增到 4 倍，标准误减半——精度只能按 √n 改善。", ch: 6, lab: "clt"
+    },
+    {
+      t: "中心极限定理", f: 'n 足够大 → x̄ ~ N(μ, <span class="frac"><span class="num">σ²</span><span class="den">n</span></span>)',
+      d: "总体分布无论多奇怪，只要样本量足够大，样本均值的分布近似正态。这解释了为什么正态分布在推断里无处不在。",
+      u: "总体偏态严重时需要更大的 n（一般 ≥ 30 是宽松经验值，重尾分布可能要 50 以上）。", ch: 6, lab: "clt"
+    },
+    {
+      t: "置信区间（均值，σ 未知）", f: 'x̄ ± t<sub>α/2, n−1</sub> · <span class="frac"><span class="num">s</span><span class="den">√n</span></span>',
+      d: "以估计值为中心的区间。「95%」描述的是这套构造方法：重复抽样时，约 95% 的区间会盖住真值。",
+      u: "区间比 p 值信息量更大，因为它同时给出效果的可能范围。", ch: 7, lab: "ci"
+    },
+    {
+      t: "t 统计量（单样本）", f: 't = <span class="frac"><span class="num">x̄ − μ₀</span><span class="den">s / √n</span></span>',
+      d: "看样本均值离假设值究竟隔了「几个标准误」。隔得越远，越不像是由随机波动造成的。",
+      u: "自由度 df = n − 1。σ 未知时用 t 分布而非正态分布。", ch: 8, lab: "ttest"
+    },
+    {
+      t: "效应量 Cohen's d", f: 'd = <span class="frac"><span class="num">x̄₁ − x̄₂</span><span class="den">s<sub>pooled</sub></span></span>',
+      d: "把均值差换算成「多少个标准差」。消除了量纲，可以跨研究比较：0.2 小 / 0.5 中 / 0.8 大。",
+      u: "p 值回答「有没有」，d 回答「有多大」。样本很大时，微小的 d 也能显著。", ch: 8, lab: "power"
+    },
+    {
+      t: "F 统计量（单因素方差分析）", f: 'F = <span class="frac"><span class="num">MS<sub>组间</sub></span><span class="den">MS<sub>组内</sub></span></span>',
+      d: "组间变异与组内变异之比。分组若没有作用，两者量级接近，F 在 1 附近波动。",
+      u: "F 显著只说明「至少有一组不同」，定位差异要靠事后比较。", ch: 9, lab: "anova"
+    },
+    {
+      t: "卡方统计量", f: 'χ² = Σ <span class="frac"><span class="num">(O − E)²</span><span class="den">E</span></span>',
+      d: "把每个格子的观察频数与独立性假设下的期望频数做比较，累积偏离程度。",
+      u: "期望频数过小需改用 Fisher 精确检验；显著后还需 Cramér's V 判断强弱。", ch: 12, lab: "chi2"
+    },
+    {
+      t: "一元线性回归", f: 'ŷ = a + b·x',
+      d: "b 是自变量每增加一个单位时因变量的平均变化量；a 是截距，仅在 x = 0 有意义时才有实际含义。",
+      u: "R² 说明解释了多少变异；残差图用来检验线性、等方差与独立性假设。", ch: 11, lab: "corr-reg"
+    }
+  ];
+
+  U.$("#modelGrid").innerHTML = MODELS.map(function (m) {
+    var ch = chapterOf(m.ch), lab = moduleOf(m.lab);
+    return '<div class="card"><div class="card-h"><h3 style="font-size:15.5px;margin:0">' + esc(m.t) + "</h3>" +
+      '<span class="spacer"></span><span class="badge">' + (ch && ch.extra ? esc(ch.title.split(" · ")[0]) : "第 " + m.ch + " 章") + "</span></div>" +
+      '<div class="formula" style="font-size:16.5px;margin:10px 0">' + m.f + "</div>" +
+      '<div class="mut fs13" style="line-height:1.75">' + m.d + "</div>" +
+      '<div class="callout info mt10" style="margin-bottom:0"><span class="ttl">什么时候注意</span>' + m.u + "</div>" +
+      '<div class="row mt14">' +
+      (ch ? '<a class="btn sm ghost" href="chapters.html#' + ch.id + '">看讲解</a>' : "") +
+      (lab ? '<a class="btn sm" href="lab.html?m=' + lab.id + '">看模型动起来</a>' : "") +
+      "</div></div>";
+  }).join("");
+})();
+</script>
+</body>
+</html>

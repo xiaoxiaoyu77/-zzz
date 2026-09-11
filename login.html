@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>访问验证 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="新闻传播统计学教学互动平台访问入口">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<main class="gate" role="main">
+  <div class="gate-box">
+    <div class="logo-lg">统</div>
+    <h1>新闻传播统计学</h1>
+    <p class="sub">教学互动平台 · 输入访问口令后进入<br>
+      <span class="faint fs12">口令由任课老师提供</span>
+    </p>
+
+    <form id="gateForm" autocomplete="off" novalidate>
+      <div class="fld-row">
+        <label class="fld" for="pw">访问口令</label>
+        <input type="password" id="pw" placeholder="请输入口令" autocomplete="current-password" spellcheck="false">
+      </div>
+
+      <div class="fld-row">
+        <label class="switch">
+          <input type="checkbox" id="remember" checked>
+          <span>记住我 30 天（本机免重复输入）</span>
+        </label>
+      </div>
+
+      <div class="err" id="err" role="alert"></div>
+
+      <button type="submit" class="btn primary block" id="go">进入平台</button>
+    </form>
+
+    <div class="ft">
+      本站为课程配套教学资源，内容为原创编写的讲解、案例、数据与互动模型。<br>
+      如忘记口令，请向任课老师索取。
+    </div>
+  </div>
+</main>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var U = window.SITE_UI, APP = window.APP;
+  var form = U.$("#gateForm"), pw = U.$("#pw"), err = U.$("#err"), rm = U.$("#remember");
+
+  // 已登录则直接跳走，避免重复验证
+  function nextUrl() {
+    var n = U.param("next", "");
+    if (!n) return "index.html";
+    // 只允许站内相对路径，防开放重定向
+    if (/^(?:[a-z]+:)?\/\//i.test(n) || n.indexOf("..") >= 0) return "index.html";
+    return n;
+  }
+  if (U.isAuthed()) {
+    var u0 = nextUrl();
+    form.innerHTML =
+      '<div class="callout ok" style="margin:0"><span class="ttl">已通过验证</span>' +
+      "本机已记住登录状态，正在进入平台…若没有自动跳转，请点下面的按钮。</div>" +
+      '<a class="btn primary block mt14" href="' + encodeURI(u0) + '">进入平台 →</a>';
+    try { location.replace(u0); } catch (e0) { }
+    return;
+  }
+
+  // 主题切换（登录页也允许）
+  U.$$("[data-theme-toggle]").forEach(function (b) { b.addEventListener("click", U.toggleTheme); });
+
+  U.$("#pw").focus();
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var v = pw.value.trim();
+    if (!v) { err.textContent = "请输入访问口令。"; pw.focus(); return; }
+    if (!APP.auth.enabled || v === APP.auth.password) {
+      U.setAuthed(rm.checked);
+      err.textContent = "";
+      var url = nextUrl();
+      // 先给出可见入口：某些预览 / 沙箱环境会拦截跳转，
+      // 只靠 location.replace 会让人以为「输入后进不去」
+      form.innerHTML =
+        '<div class="callout ok" style="margin:0"><span class="ttl">验证通过</span>' +
+        "正在进入平台…若没有自动跳转，请点下面的按钮。</div>" +
+        '<a class="btn primary block mt14" href="' + encodeURI(url) + '">进入平台 →</a>';
+      try { location.replace(url); } catch (e1) {
+        try { location.href = url; } catch (e2) { }
+      }
+    } else {
+      err.textContent = "口令不正确，请检查后重试。";
+      pw.select();
+    }
+  });
+
+  // 输入时清掉错误提示
+  pw.addEventListener("input", function () { if (err.textContent) err.textContent = ""; });
+})();
+</script>
+</body>
+</html>

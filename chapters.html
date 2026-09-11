@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>课程详解 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="逐章讲解：学习目标、知识点、重难点拆解、易错点、公式、案例与随堂小题。">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header data-topbar></header>
+
+<main class="wrap page" role="main">
+  <div class="split">
+
+    <!-- ============ 左：章节树 ============ -->
+    <aside class="card panel" style="padding:16px 14px">
+      <div class="row" style="gap:8px">
+        <input type="text" id="chSearch" placeholder="搜索章节 / 知识点…" style="flex:1;min-width:0">
+      </div>
+      <div class="chips mt10" id="chFilter">
+        <button class="chip active" data-v="all">全部</button>
+        <button class="chip" data-v="key">含重难点</button>
+        <button class="chip" data-v="lab">有实验</button>
+      </div>
+      <div class="dashed"></div>
+      <div class="tree" id="chTree"></div>
+    </aside>
+
+    <!-- ============ 右：章节内容 ============ -->
+    <section id="chBody" class="stack"></section>
+
+  </div>
+</main>
+
+<footer data-footer></footer>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/content-a.js"></script>
+<script src="assets/js/content-b.js"></script>
+<script src="assets/js/library.js"></script>
+<script src="assets/js/site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var U = window.SITE_UI, esc = U.esc;
+  var CH = window.CHAPTERS || [], PARTS = window.PARTS || [], MOD = window.LAB_MODULES || [];
+  var cur = null, filter = "all", q = "";
+
+  function get(id) { return CH.filter(function (c) { return c.id === id; })[0] || null; }
+  function lvBadge(lv) {
+    var map = { 1: ["ok", "了解"], 2: ["warn", "掌握"], 3: ["danger", "核心难点"] };
+    var x = map[lv] || map[1];
+    return '<span class="badge ' + x[0] + '">★ ' + x[1] + "</span>";
+  }
+  function partName(pid) {
+    var p = PARTS.filter(function (x) { return x.id === pid; })[0];
+    return p ? p.name : "";
+  }
+  /* 正文章显示 0X；拓展专题不占用教材章号 */
+  function chNo(c) { return c.extra ? "拓" : (c.no < 10 ? "0" + c.no : "" + c.no); }
+  function chPre(c) { return c.extra ? "" : "第 " + c.no + " 章 · "; }
+
+  /* ---------------- 左侧树 ---------------- */
+  function renderTree() {
+    var html = PARTS.map(function (p) {
+      var list = CH.filter(function (c) {
+        if (c.part !== p.id) return false;
+        if (filter === "key" && !(c.keys || []).length) return false;
+        if (filter === "lab" && !(c.lab || []).length) return false;
+        if (q) {
+          var hay = (c.title + c.sub + (c.points || []).map(function (x) { return x.t + x.d; }).join("") +
+            (c.keys || []).map(function (x) { return x.t + x.d; }).join("")).toLowerCase();
+          if (hay.indexOf(q.toLowerCase()) < 0) return false;
+        }
+        return true;
+      });
+      if (!list.length) return "";
+      return '<div class="part">' + esc(p.name) + "</div>" + list.map(function (c) {
+        return '<a href="#' + c.id + '" data-id="' + c.id + '"' + (c.id === cur ? ' class="active"' : "") + ">" +
+          '<span class="no">' + chNo(c) + "</span>" +
+          '<span style="flex:1;min-width:0">' + esc(c.title) + "</span>" +
+          ((c.keys || []).length ? '<span class="key-dot" title="含重难点"></span>' : "") +
+          "</a>";
+      }).join("");
+    }).join("");
+    U.$("#chTree").innerHTML = html || '<div class="mut fs13 tc" style="padding:20px">没有匹配的章节</div>';
+  }
+
+  /* ---------------- 右侧内容 ---------------- */
+  function renderChapter(id) {
+    var c = get(id) || CH[0];
+    if (!c) return;
+    cur = c.id;
+    renderTree();
+
+    var idx = CH.indexOf(c), prev = CH[idx - 1], next = CH[idx + 1];
+    var labs = (c.lab || []).map(function (x) {
+      return MOD.filter(function (m) { return m.id === x; })[0];
+    }).filter(Boolean);
+
+    var html = "";
+
+    /* 标题区 */
+    html += '<div class="card lab-head" style="display:block">' +
+      '<div class="row" style="gap:8px"><span class="badge acc">' + (c.extra ? "拓展专题" : "CH " + chNo(c)) + "</span>" +
+      '<span class="badge">' + esc(partName(c.part)) + "</span>" +
+      '<span class="spacer"></span><span class="faint fs12 mono">' + c.id + "</span></div>" +
+      '<h1 style="margin-top:10px">' + esc(c.title) + "</h1>" +
+      '<p class="mut" style="font-size:14.5px;margin-top:6px">' + esc(c.sub || "") + "</p>" +
+      '<div class="tags mt14">' +
+      '<span class="badge ok">' + (c.points || []).length + " 个知识点</span>" +
+      '<span class="badge danger">' + (c.keys || []).length + " 处重难点</span>" +
+      '<span class="badge warn">' + (c.pitfalls || []).length + " 个易错点</span>" +
+      (labs.length ? '<span class="badge purple">' + labs.length + " 个配套实验</span>" : "") +
+      "</div></div>";
+
+    /* 学习目标 + 导语 */
+    html += '<div class="grid g2">' +
+      '<div class="card"><div class="card-h"><h2>学完这一章，你应该能</h2></div><div class="prose"><ul>' +
+      (c.goals || []).map(function (g) { return "<li>" + esc(g) + "</li>"; }).join("") +
+      "</ul></div></div>" +
+      '<div class="card"><div class="card-h"><h2>这一章在讲什么</h2></div>' +
+      '<div class="prose"><p>' + esc(c.intro || "") + "</p></div></div></div>";
+
+    /* 知识点 */
+    if ((c.points || []).length) {
+      html += '<div class="card pad-l"><div class="card-h"><h2>知识点</h2>' +
+        '<span class="spacer"></span><span class="faint fs12">基础应知，先通读一遍</span></div>' +
+        '<div class="grid g2">' + c.points.map(function (p) {
+          return '<div class="callout info"><span class="ttl">' + esc(p.t) + "</span>" + esc(p.d) + "</div>";
+        }).join("") + "</div></div>";
+    }
+
+    /* 重难点 */
+    if ((c.keys || []).length) {
+      html += '<div class="card pad-l"><div class="card-h"><h2>重难点解析</h2>' +
+        '<span class="spacer"></span><span class="badge danger">本章重点投入时间的地方</span></div>' +
+        '<div class="stack">' + c.keys.map(function (k) {
+          return '<div class="case-card" style="border-left:3px solid ' +
+            (k.lv === 3 ? "var(--danger)" : k.lv === 2 ? "var(--warn)" : "var(--ok)") + '">' +
+            '<div class="hd">' + lvBadge(k.lv) + '<span class="k">' + esc(k.t) + "</span></div>" +
+            '<div class="bd">' + esc(k.d) + "</div>" +
+            (k.tip ? '<div class="callout warn mt10" style="margin-bottom:0"><span class="ttl">怎么记 / 怎么用</span>' + esc(k.tip) + "</div>" : "") +
+            "</div>";
+        }).join("") + "</div></div>";
+    }
+
+    /* 易错点 */
+    if ((c.pitfalls || []).length) {
+      html += '<div class="card pad-l" style="border-color:rgba(247,37,133,.32)">' +
+        '<div class="card-h"><h2>易错点清单</h2><span class="spacer"></span>' +
+        '<span class="badge danger">考试与作业中最常失分</span></div>' +
+        '<div class="prose"><ol>' + c.pitfalls.map(function (p) { return "<li>" + esc(p) + "</li>"; }).join("") +
+        "</ol></div></div>";
+    }
+
+    /* 公式 */
+    if ((c.formulas || []).length) {
+      html += '<div class="card pad-l"><div class="card-h"><h2>核心公式</h2>' +
+        '<span class="spacer"></span><span class="faint fs12">不必死记，理解每个符号代表什么</span></div>' +
+        '<div class="grid g2">' + c.formulas.map(function (f) {
+          return '<div class="card flat"><div class="row" style="justify-content:space-between">' +
+            '<span class="fs13 dim">' + esc(f.name) + '</span></div>' +
+            '<div class="formula" style="font-size:17px;margin:10px 0">' + f.html + "</div>" +
+            (f.note ? '<div class="note">' + esc(f.note) + "</div>" : "") + "</div>";
+        }).join("") + "</div></div>";
+    }
+
+    /* 案例 */
+    if (c.caseTxt) {
+      html += '<div class="card pad-l"><div class="card-h"><h2>新闻传播场景案例</h2>' +
+        '<span class="spacer"></span><span class="badge acc">真实研究情境</span></div>' +
+        '<div class="prose"><h4 style="margin-top:0">' + esc(c.caseTxt.title) + "</h4>" +
+        '<p>' + c.caseTxt.body + "</p></div></div>";
+    }
+
+    /* 关联实验 */
+    if (labs.length) {
+      html += '<div class="card pad-l"><div class="card-h"><h2>配套互动实验</h2>' +
+        '<span class="spacer"></span><span class="badge purple">边调参数边理解</span></div>' +
+        '<div class="mod-grid">' + labs.map(function (m) {
+          return '<a class="mod-card" href="lab.html?m=' + m.id + '" style="display:block">' +
+            '<div class="row" style="justify-content:space-between"><span class="n">实验 ' + m.no + "</span>" +
+            '<span class="stars"><span class="on">' + "★".repeat(m.diff) + '</span><span class="off">' + "★".repeat(3 - m.diff) + "</span></span></div>" +
+            '<div class="ti">' + esc(m.name) + "</div>" +
+            '<div class="de">' + esc(m.desc) + "</div>" +
+            '<div class="cav"><b>' + esc(m.key) + "</b></div></a>";
+        }).join("") + "</div></div>";
+    }
+
+    /* 随堂自测 */
+    if ((c.quiz || []).length) {
+      html += '<div class="card pad-l"><div class="card-h"><h2>随堂自测</h2>' +
+        '<span class="spacer"></span><span class="faint fs12">点选项即时判分，附解析</span></div>' +
+        '<div class="stack" id="chQuiz">' + c.quiz.map(function (qq, i) {
+          return '<div class="q-item" data-qi="' + i + '">' +
+            '<div class="qh"><span class="qn">' + (i + 1) + '</span><span class="qt">' + esc(qq.q) + "</span></div>" +
+            '<div class="opts">' + (qq.o || []).map(function (o, j) {
+              return '<div class="opt" data-j="' + j + '"><span class="lb">' + "ABCD"[j] + "</span><span>" + esc(o) + "</span></div>";
+            }).join("") + "</div>" +
+            '<div class="q-exp" hidden><b>解析</b>' + esc(qq.e || "") + "</div></div>";
+        }).join("") + "</div></div>";
+    }
+
+    /* 上一章 / 下一章 */
+    html += '<div class="row" style="justify-content:space-between">' +
+      (prev ? '<a class="btn" href="#' + prev.id + '">← ' + chPre(prev) + esc(prev.title) + "</a>" : "<span></span>") +
+      (next ? '<a class="btn" href="#' + next.id + '">' + chPre(next) + esc(next.title) + " →</a>" : "<span></span>") +
+      "</div>";
+
+    U.$("#chBody").innerHTML = html;
+
+    /* 自测交互 */
+    var quiz = U.$("#chQuiz");
+    if (quiz) {
+      quiz.addEventListener("click", function (e) {
+        var opt = e.target.closest(".opt"); if (!opt) return;
+        var item = opt.closest(".q-item");
+        if (item.dataset.done === "1") return;
+        var qi = +item.dataset.qi, j = +opt.dataset.j, ans = c.quiz[qi].a;
+        U.$$(".opt", item).forEach(function (el, k) {
+          if (k === ans) el.classList.add("right");
+          else if (k === j) el.classList.add("wrong");
+          else el.classList.add("dim");
+        });
+        item.dataset.done = "1";
+        U.$(".q-exp", item).hidden = false;
+      });
+    }
+
+    /* 记录已读 */
+    try {
+      var rd = JSON.parse(localStorage.getItem("xwcb.read") || "[]");
+      if (rd.indexOf(c.id) < 0) { rd.push(c.id); localStorage.setItem("xwcb.read", JSON.stringify(rd)); }
+    } catch (err) { }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /* ---------------- 路由 ---------------- */
+  function route() {
+    var id = (location.hash || "").replace("#", "");
+    if (!get(id)) id = CH[0] ? CH[0].id : "";
+    renderChapter(id);
+  }
+
+  U.$("#chFilter").addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    filter = b.dataset.v;
+    U.$$("#chFilter .chip").forEach(function (x) { x.classList.toggle("active", x === b); });
+    renderTree();
+  });
+
+  var timer = null;
+  U.$("#chSearch").addEventListener("input", function (e) {
+    clearTimeout(timer);
+    var v = e.target.value.trim();
+    timer = setTimeout(function () { q = v; renderTree(); }, 160);
+  });
+
+  window.addEventListener("hashchange", route);
+  route();
+})();
+</script>
+</body>
+</html>

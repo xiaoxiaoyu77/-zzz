@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>使用说明与部署 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="平台使用说明、内容来源声明、口令修改方法，以及 PHP / Node / JSP 三种后端登录防护实现与部署指引。">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header data-topbar></header>
+
+<main class="wrap page" role="main">
+
+  <div class="lab-head">
+    <div>
+      <h1>使用说明与部署</h1>
+      <p>这一页写给两类人：<b>上课的人</b>（怎么用最省力）和<b>要把它放到服务器上的人</b>（怎么改口令、怎么做真正的登录防护）。</p>
+    </div>
+  </div>
+
+  <!-- 目录 -->
+  <section class="card mt18">
+    <div class="row">
+      <a class="btn sm" href="#howto">① 怎么用</a>
+      <a class="btn sm" href="#credits">② 内容来源</a>
+      <a class="btn sm" href="#password">③ 改访问口令</a>
+      <a class="btn sm" href="#backend">④ 后端登录防护（PHP / Node / JSP）</a>
+      <a class="btn sm" href="#deploy">⑤ 部署上线</a>
+      <a class="btn sm" href="#faq">⑥ 常见问题</a>
+    </div>
+  </section>
+
+  <!-- ① 怎么用 -->
+  <section class="card pad-l mt18" id="howto">
+    <div class="card-h"><h2>① 怎么用</h2></div>
+    <div class="grid g2">
+      <div class="prose">
+        <h4>学生</h4>
+        <ol>
+          <li><b>知识地图</b>定位：找到正在学的那一章，看它属于哪条主线。</li>
+          <li><b>课程详解</b>精读：先看学习目标，再读重难点，最后看易错点清单。</li>
+          <li><b>互动实验室</b>动手：每个实验都标了难度星级，核心难点章（★3）优先做。</li>
+          <li><b>自测</b>验证：按章练习 → 错题收进错题本 → 考前只翻错题本。</li>
+        </ol>
+        <h4>教师</h4>
+        <ol>
+          <li><b>投屏讲授</b>：课程详解页一章一节，重难点已用颜色标出等级。</li>
+          <li><b>课堂演示</b>：实验室支持现场改参。让学生先预测，再拖动滑块揭晓。</li>
+          <li><b>布置作业</b>：数据与模型页的数据集可下载 CSV，每个都标注了适用章节。</li>
+          <li><b>随堂小测</b>：自测页按章抽题，含解析，可作为小测或抢答。</li>
+        </ol>
+      </div>
+      <div class="prose">
+        <h4>全局快捷键</h4>
+        <div class="kv mt10">
+          <div class="k">全站搜索</div><div class="v">Ctrl + K 或 /</div>
+          <div class="k">上一个 / 下一个实验</div><div class="v">Alt + ← / Alt + →</div>
+          <div class="k">关闭搜索</div><div class="v">Esc</div>
+          <div class="k">切换深色 / 浅色</div><div class="v">右上角按钮</div>
+        </div>
+        <h4 class="mt18">技术支持</h4>
+        <ul>
+          <li>整站为纯静态站点，<b>不需要数据库和服务器端程序</b>即可打开使用。</li>
+          <li>所有图表由浏览器内的 JavaScript 实时计算与绘制，<b>数据不出本机</b>。</li>
+          <li>推荐浏览器：Chrome、Edge、Safari 近两年版本（需支持 ES6 与 SVG）。</li>
+          <li>已适配手机与平板；实验区在窄屏下自动改为上下布局。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 内容来源 -->
+  <section class="card pad-l mt18" id="credits">
+    <div class="card-h"><h2>② 内容来源与使用范围</h2><span class="spacer"></span><span class="badge warn">重要</span></div>
+    <div class="callout warn">
+      <span class="ttl">内容来源声明</span>
+      本站是《新闻传播统计学基础》（<b>曾秀芹、张楠</b> 著，<b>厦门大学出版社</b>）的课程配套教学资源，
+      按该课程的知识体系与教学顺序组织章节结构。站内<b>全部讲解文字、案例、数据集与互动模型均为独立编写</b>，
+      未复制教材原文。术语表述与章节顺序请以正式出版的教材为准，本站作为理解与练习的辅助工具。
+    </div>
+    <div class="grid g2 mt14">
+      <div class="prose">
+        <h4>本站包含</h4>
+        <ul>
+          <li>14 章正文 + 3 篇拓展专题的原创讲解</li>
+          <li>重难点分级标注与易错点清单</li>
+          <li>18 个可交互的统计模型</li>
+          <li>18 个新闻传播情境案例</li>
+          <li>8 组教学数据集（含 CSV 下载）</li>
+          <li>术语表、题库与自测系统</li>
+        </ul>
+      </div>
+      <div class="prose">
+        <h4>使用建议</h4>
+        <ul>
+          <li>课堂教学可自由使用、投屏与打印。</li>
+          <li>数据集为教学示意数据，勿用于正式研究结论。</li>
+          <li>如需对外发表或商业使用，请先与制作者确认。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ 改口令 -->
+  <section class="card pad-l mt18" id="password">
+    <div class="card-h"><h2>③ 修改访问口令</h2><span class="spacer"></span><span class="badge acc">30 秒完成</span></div>
+    <div class="prose">
+      <p>打开 <code>assets/js/site.js</code>，找到文件开头处的配置区，修改这两行即可：</p>
+    </div>
+    <pre class="code">auth: {
+  enabled: true,          // 改成 false 可完全关闭访问闸门
+  password: "xwcb2026",   // ← 把这里换成你的口令
+  rememberDays: 30        // 「记住我」的有效天数
+},</pre>
+    <div class="callout danger">
+      <span class="ttl">必须了解的安全边界</span>
+      这是<b>纯前端口令校验</b>，只能挡住「随手点进来的人」，懂技术的人查看源码就能看到口令。
+      它适合课堂内部使用（防止学生绕过教学内容直接看答案之类），<b>不能用于保护敏感数据</b>。
+      如果需要真正的账号安全，请见下一节的三种后端方案。
+    </div>
+  </section>
+
+  <!-- ④ 后端 -->
+  <section class="card pad-l mt18" id="backend">
+    <div class="card-h"><h2>④ 后端登录防护：三种实现</h2><span class="spacer"></span><span class="badge purple">择一即可</span></div>
+    <div class="callout info">
+      <span class="ttl">先说清楚 JSP 与 PHP 的关系</span>
+      <b>JSP 是 Java 技术栈</b>（需要 JDK + Tomcat 等容器），<b>PHP 是另一套技术栈</b>（需要 PHP 运行环境）。
+      两者不能混用，也没有必要混用——它们解决的是同一个问题：<b>在服务器端校验账号密码，未登录不允许访问页面</b>。
+      选哪一个，取决于你手上有什么服务器。
+    </div>
+
+    <div class="grid g2 mt18">
+      <div class="card flat">
+        <div class="card-h"><h3 style="margin:0">方案一 · PHP</h3><span class="badge ok">虚拟主机 / 校园空间首选</span></div>
+        <div class="prose fs13"><p>绝大多数虚拟主机默认支持 PHP，上传即用，无需配置。</p></div>
+        <pre class="code">// login.php —— 放在站点根目录
+&lt;?php
+session_start();
+
+// 账号表：实际使用时把密码散列值存进数据库，不要明文写在这里
+$USERS = [
+  'student' =&gt; '$2y$10$e0NRzS3Uu1yqk8ZQ0m3yQeQ7lJ8yYkz9m2Vv0k9pQ0m3yQeQ7lJ8y',
+];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $u = isset($_POST['u']) ? trim($_POST['u']) : '';
+  $p = isset($_POST['p']) ? $_POST['p'] : '';
+  if (isset($USERS[$u]) &amp;&amp; password_verify($p, $USERS[$u])) {
+    session_regenerate_id(true);        // 防会话固定攻击
+    $_SESSION['uid'] = $u;
+    $_SESSION['t']   = time();
+    header('Location: index.html');
+    exit;
+  }
+  $err = '账号或密码不正确';
+}
+?&gt;
+&lt;!-- 下面是登录表单，省略样式 --&gt;
+&lt;form method="post"&gt;
+  &lt;input name="u" placeholder="账号" required&gt;
+  &lt;input name="p" type="password" placeholder="密码" required&gt;
+  &lt;button&gt;登录&lt;/button&gt;
+&lt;/form&gt;</pre>
+        <pre class="code">// guard.php —— 在每个页面的最顶部 require 一次
+&lt;?php
+session_start();
+$IDLE = 7200;                                   // 2 小时无操作自动登出
+if (empty($_SESSION['uid'])
+    || (time() - $_SESSION['t']) &gt; $IDLE) {
+  header('Location: login.php');
+  exit;
+}
+$_SESSION['t'] = time();                        // 刷新活动时间
+?&gt;</pre>
+        <div class="note">用法：把 <code>guard.php</code> 加在所有页面的第一行。
+          纯静态的 .html 页面若要受保护，可在 <code>.htaccess</code> 里做重写，
+          或把页面后缀改为 <code>.php</code> 后 require 该守卫文件。</div>
+      </div>
+
+      <div class="card flat">
+        <div class="card-h"><h3 style="margin:0">方案二 · Node.js</h3><span class="badge ok">可一键部署到云</span></div>
+        <div class="prose fs13"><p>适合把这套静态站直接托管起来，顺便加上真正的鉴权。</p></div>
+        <pre class="code">// server.js
+const express = require('express');
+const session = require('express-session');
+const bcrypt  = require('bcryptjs');
+const app = express();
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static('.'));                    // 静态资源
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'change-me',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { httpOnly: true, sameSite: 'lax', maxAge: 2 * 3600 * 1000 }
+}));
+
+// 演示用账号；生产环境请改为数据库查询
+const USERS = {
+  student: bcrypt.hashSync('xwcb2026', 10)
+};
+
+// 登录接口
+app.post('/api/login', async (req, res) =&gt; {
+  const { u, p } = req.body;
+  const hash = USERS[u];
+  if (hash &amp;&amp; await bcrypt.compare(p, hash)) {
+    req.session.uid = u;
+    return res.json({ ok: true });
+  }
+  res.status(401).json({ ok: false, msg: '账号或密码不正确' });
+});
+
+// 守卫：未登录不得访问受保护页面
+const PROTECTED = /\.(html?)$/i;
+app.use((req, res, next) =&gt; {
+  if (req.path === '/login.html' || req.path.startsWith('/assets/')
+      || req.path.startsWith('/api/')) return next();
+  if (PROTECTED.test(req.path) &amp;&amp; !req.session.uid) {
+    return res.redirect('/login.html');
+  }
+  next();
+});
+
+app.listen(3000, () =&gt; console.log('http://localhost:3000'));</pre>
+        <div class="note">依赖：<code>npm i express express-session bcryptjs</code>。
+          启动：<code>node server.js</code>。</div>
+      </div>
+
+      <div class="card flat">
+        <div class="card-h"><h3 style="margin:0">方案三 · JSP + Servlet</h3><span class="badge warn">需要 JDK + Tomcat</span></div>
+        <div class="prose fs13"><p>符合你最初提到的 JSP 架构。核心是登录 Servlet 与一个登录过滤器。</p></div>
+        <pre class="code">&lt;%-- login.jsp --%&gt;
+&lt;%@ page contentType="text/html;charset=UTF-8" %&gt;
+&lt;form method="post" action="login"&gt;
+  账号 &lt;input name="u" required&gt;
+  密码 &lt;input type="password" name="p" required&gt;
+  &lt;button&gt;登录&lt;/button&gt;
+&lt;/form&gt;</pre>
+        <pre class="code">// LoginServlet.java
+@WebServlet("/login")
+public class LoginServlet extends HttpServlet {
+  // 演示用；生产环境应查询数据库并存储 BCrypt 散列
+  private static final Map&lt;String, String&gt; USERS =
+      Map.of("student", "$2a$10$...");
+
+  protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+      throws IOException {
+    String u = req.getParameter("u");
+    String p = req.getParameter("p");
+    String hash = USERS.get(u);
+    try {
+      if (hash != null &amp;&amp; BCrypt.checkpw(p, hash)) {
+        HttpSession s = req.getSession(true);
+        s.setAttribute("uid", u);
+        s.setMaxInactiveInterval(7200);          // 2 小时
+        resp.sendRedirect("index.html");
+        return;
+      }
+    } catch (Exception ignore) { }
+    resp.sendRedirect("login.jsp?err=1");
+  }
+}</pre>
+        <pre class="code">// AuthFilter.java —— 统一拦截，未登录跳登录页
+@WebFilter(urlPatterns = {"*.html", "*.jsp"})
+public class AuthFilter implements Filter {
+  public void doFilter(ServletRequest rq, ServletResponse rs, FilterChain chain)
+      throws IOException, ServletException {
+    HttpServletRequest  req  = (HttpServletRequest) rq;
+    HttpServletResponse resp = (HttpServletResponse) rs;
+    String path = req.getRequestURI();
+    if (path.endsWith("login.jsp")) { chain.doFilter(rq, rs); return; }
+    HttpSession s = req.getSession(false);
+    if (s == null || s.getAttribute("uid") == null) {
+      resp.sendRedirect(req.getContextPath() + "/login.jsp");
+      return;
+    }
+    chain.doFilter(rq, rs);
+  }
+}</pre>
+        <div class="note">部署：把网站目录放进 <code>webapp/</code>，编译后由 Tomcat 提供访问。
+          注意 <code>.html</code> 默认不走 Servlet，需要配置 Filter 映射或在 web.xml 中声明。</div>
+      </div>
+
+      <div class="card flat">
+        <div class="card-h"><h3 style="margin:0">共同的安全要点</h3><span class="badge danger">不管选哪种都适用</span></div>
+        <div class="prose fs13">
+          <ol>
+            <li><b>密码不存明文</b>：用 <code>password_hash</code> / <code>bcrypt</code> 等加盐散列。</li>
+            <li><b>登录后重生成会话 ID</b>，防会话固定攻击。</li>
+            <li><b>Cookie 加 HttpOnly + SameSite</b>，防脚本窃取与跨站请求伪造。</li>
+            <li><b>限制登录尝试次数</b>，防暴力破解（例如同 IP 5 次失败锁 10 分钟）。</li>
+            <li><b>数据与密钥不进前端</b>：口令、盐值、数据库信息只放服务端。</li>
+            <li><b>设置会话超时</b>并支持主动退出登录。</li>
+            <li><b>强制 HTTPS</b>（公网部署时），避免口令在传输中被截获。</li>
+          </ol>
+          <div class="callout warn"><span class="ttl">本站现状</span>
+            目前是纯静态版本，使用前端口令闸门（口令见 <a href="#password">第 ③ 节</a>）。
+            上面的三种后端方案可按需接入；接入后请把 <code>site.js</code> 里的
+            <code>auth.enabled</code> 改为 <code>false</code>，避免两层验证互相干扰。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ 部署 -->
+  <section class="card pad-l mt18" id="deploy">
+    <div class="card-h"><h2>⑤ 部署上线</h2></div>
+    <div class="grid g3">
+      <div class="callout info"><span class="ttl">本地直接用</span>
+        双击 <code>index.html</code> 即可打开（纯静态）。若要避免个别浏览器对本地文件的限制，可在目录下起一个本地服务：<br>
+        <code>python -m http.server 8000</code><br>然后访问 <code>http://localhost:8000</code>。</div>
+      <div class="callout info"><span class="ttl">校园空间 / 虚拟主机</span>
+        把整个目录（含 <code>assets/</code>）上传到网站根目录即可。若要登录防护，采用 PHP 方案最省事。
+        注意保持目录结构不变，否则样式与脚本会加载失败。</div>
+      <div class="callout info"><span class="ttl">云服务器 / 容器</span>
+        若要公网给全班用，建议 Node 方案（<code>node server.js</code> 配合 Nginx 反向代理 + HTTPS 证书），
+        或用任意静态托管服务直接上传目录。</div>
+    </div>
+    <div class="dashed"></div>
+    <div class="prose">
+      <h4>目录结构</h4>
+      <pre class="code">站点根目录/
+├─ index.html          首页
+├─ login.html          访问验证
+├─ map.html            知识地图
+├─ chapters.html       课程详解（14 章 + 拓展 3 篇）
+├─ lab.html            互动实验室（18 个模块）
+├─ cases.html          案例库
+├─ data.html           数据与模型
+├─ quiz.html           自测练习
+├─ glossary.html       术语表
+├─ about.html          本页
+└─ assets/
+   ├─ css/main.css     设计系统（深 / 浅双主题）
+   └─ js/
+      ├─ stats.js       统计数学内核（分布、检验、回归）
+      ├─ content-a.js   第 1–7 章内容
+      ├─ content-b.js   第 8 章–拓展篇内容
+      ├─ library.js     术语 / 案例 / 数据集 / 检索索引
+      ├─ site.js        主题、导航、全局搜索、访问闸门
+      ├─ lab-core.js    实验室框架与 SVG 绘图器
+      └─ lab-set1…10.js 18 个互动模块
+
+_dev/                  开发与自测脚本（jsdom 冒烟测试），部署上线时可整目录删除</pre>
+    </div>
+  </section>
+
+  <!-- ⑥ FAQ -->
+  <section class="card pad-l mt18" id="faq">
+    <div class="card-h"><h2>⑥ 常见问题</h2></div>
+    <div class="grid g2">
+      <div class="callout"><span class="ttl">忘记口令了怎么办？</span>向任课老师索取，或按第 ③ 节直接查看/修改源码中的口令。</div>
+      <div class="callout"><span class="ttl">数据会上传到服务器吗？</span>不会。所有计算都在你的浏览器里完成，实验数据不离开本机。</div>
+      <div class="callout"><span class="ttl">图表不显示 / 页面错乱？</span>多为浏览器缓存或文件缺失。按 Ctrl+F5 强制刷新；若从服务器访问，确认 <code>assets/</code> 目录已完整上传。</div>
+      <div class="callout"><span class="ttl">错题本会同步到其他设备吗？</span>不会，它存在本机浏览器。换设备或清缓存会丢失，重要错题建议另行记录。</div>
+      <div class="callout"><span class="ttl">可以打印给学生吗？</span>可以。打印时导航栏、侧栏与按钮会自动隐藏，只保留正文内容。</div>
+      <div class="callout"><span class="ttl">教材章节和本站编号对不上？</span>本站按课程知识体系组织，若与教材目录有出入，以教材为准；可把教材目录发来，按实际章节名对齐。</div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-footer></footer>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/content-a.js"></script>
+<script src="assets/js/content-b.js"></script>
+<script src="assets/js/library.js"></script>
+<script src="assets/js/site.js"></script>
+</body>
+</html>

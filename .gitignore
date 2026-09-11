@@ -1,0 +1,15 @@
+# 开发自测脚本（本地用，不需要上线）
+_dev/
+
+# 本地项目记忆（私密，不要提交）
+.workbuddy/
+
+# 依赖与锁文件（本地测试用）
+node_modules/
+package-lock.json
+package.json
+
+# 系统与编辑器杂项
+.DS_Store
+Thumbs.db
+desktop.ini

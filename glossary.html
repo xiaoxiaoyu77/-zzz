@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>术语表 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="146 条统计学核心术语，含英文对照、通俗解释与所属章节，支持中英文检索。">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header data-topbar></header>
+
+<main class="wrap page" role="main">
+
+  <div class="lab-head">
+    <div>
+      <h1>术语速查</h1>
+      <p>按教材顺序整理的统计学核心术语，每条都给了<b>能听懂的解释</b>而不只是教科书定义，并标注了所在章节。
+        支持中文、英文与缩写检索。</p>
+    </div>
+    <span class="spacer"></span>
+    <span class="badge acc" id="gCount"></span>
+  </div>
+
+  <section class="card mt18">
+    <div class="row">
+      <input type="text" id="gSearch" placeholder="搜索术语，例如：标准误 / CLT / p 值 / Cronbach" style="flex:1;min-width:220px">
+      <button class="btn ghost sm" id="gClear">清空</button>
+    </div>
+    <div class="dashed"></div>
+    <div class="row">
+      <span class="mut fs13">按类别：</span>
+      <div class="chips" id="gTags"></div>
+    </div>
+  </section>
+
+  <div class="grid g3 mt18" id="gGrid"></div>
+
+  <section class="card pad-l mt24">
+    <div class="card-h"><h2>最容易混淆的八对概念</h2><span class="spacer"></span><span class="badge warn">考试与作业高频失分点</span></div>
+    <div class="grid g2" id="pairGrid"></div>
+  </section>
+
+</main>
+
+<footer data-footer></footer>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/content-a.js"></script>
+<script src="assets/js/content-b.js"></script>
+<script src="assets/js/library.js"></script>
+<script src="assets/js/site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var U = window.SITE_UI, esc = U.esc;
+  var G = window.GLOSSARY || [], CH = window.CHAPTERS || [];
+  var tag = "all", q = "";
+
+  var tags = ["all"].concat(G.map(function (g) { return g.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
+  U.$("#gTags").innerHTML = tags.map(function (t) {
+    return '<button class="chip' + (t === "all" ? " active" : "") + '" data-v="' + esc(t) + '">' +
+      (t === "all" ? "全部" : esc(t)) + "</button>";
+  }).join("");
+
+  function abbr(g) {
+    var A = window.ABBRS || {};
+    var hits = Object.keys(A).filter(function (k) { return g.t.indexOf(A[k]) >= 0; });
+    return hits.length ? " · 缩写 " + hits.join(" / ") : "";
+  }
+
+  function render() {
+    var list = G.filter(function (g) {
+      if (tag !== "all" && g.tag !== tag) return false;
+      if (q) {
+        var hay = (g.t + " " + (g.e || "") + " " + g.d + abbr(g)).toLowerCase();
+        if (hay.indexOf(q.toLowerCase()) < 0) return false;
+      }
+      return true;
+    });
+    U.$("#gCount").textContent = "共 " + G.length + " 条 · 显示 " + list.length;
+    U.$("#gGrid").innerHTML = list.length ? list.map(function (g) {
+      var c = CH.filter(function (x) { return x.no === g.ch; })[0];
+      return '<div class="term card" id="g_' + encodeURIComponent(g.t) + '">' +
+        '<div class="t">' + esc(g.t) + "</div>" +
+        (g.e ? '<div class="alt">' + esc(g.e) + esc(abbr(g)) + "</div>" : "") +
+        '<div class="d">' + esc(g.d) + "</div>" +
+        '<div class="row mt10" style="gap:6px">' +
+        '<span class="badge">' + esc(g.tag) + "</span>" +
+        (c ? '<a class="badge acc" href="chapters.html#' + c.id + '" style="text-decoration:none">' +
+          (c.extra ? esc(c.title.split(" · ")[0]) : "第 " + c.no + " 章") + "</a>" : "") +
+        "</div></div>";
+    }).join("") : '<div class="card tc mut">没有匹配的术语，换个关键词试试。</div>';
+  }
+
+  U.$("#gTags").addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    tag = b.dataset.v;
+    U.$$("#gTags .chip").forEach(function (x) { x.classList.toggle("active", x === b); });
+    render();
+  });
+
+  var timer = null;
+  U.$("#gSearch").addEventListener("input", function (e) {
+    clearTimeout(timer);
+    var v = e.target.value.trim();
+    timer = setTimeout(function () { q = v; render(); }, 150);
+  });
+  U.$("#gClear").addEventListener("click", function () {
+    U.$("#gSearch").value = ""; q = ""; render();
+  });
+
+  render();
+
+  /* 八对易混概念 */
+  var PAIRS = [
+    { a: "参数 vs 统计量", b: "参数描述总体（μ、σ、π），未知且固定；统计量描述样本（x̄、s、p），可算。推断统计就是拿统计量去猜参数。" },
+    { a: "标准差 vs 标准误", b: "标准差衡量个体之间的差异（描述统计）；标准误衡量估计量的波动，即 s/√n（推断统计）。样本越大，标准误越小，但标准差基本不变。" },
+    { a: "抽样误差 vs 非抽样误差", b: "抽样误差来自随机性，样本越大越小；非抽样误差来自测量、无回答、录入，样本再大也不会自动消失，且危害通常更大。" },
+    { a: "p 值 vs 效应量", b: "p 值回答「有没有证据」，受样本量强烈影响；效应量回答「差多少」，不受样本量影响。样本很大时，微不足道的差异也能显著。" },
+    { a: "置信水平 vs 置信区间", b: "置信水平是构造方法的长期成功率（95%）；置信区间是这一次算出的具体范围。真值不动，区间在动。" },
+    { a: "相关系数 vs 回归系数", b: "r 无量纲，衡量线性关系的强度与方向（−1 到 1）；b 有量纲，表示 x 每变化一个单位 y 平均变化多少。" },
+    { a: "信度 vs 效度", b: "信度是「测得稳不稳、一致不一致」；效度是「有没有测到该测的东西」。信度是效度的必要条件，但有信度不一定有效度。" },
+    { a: "第一类错误 vs 第二类错误", b: "第一类错误是「没差异却说有」（误报，概率为 α）；第二类错误是「有差异却说没有」（漏报，概率为 β）。降低 α 会抬高 β，两者此消彼长。" }
+  ];
+  U.$("#pairGrid").innerHTML = PAIRS.map(function (p) {
+    return '<div class="case-card" style="border-left:3px solid var(--acc)">' +
+      '<div class="k" style="font-size:14.5px;font-weight:650;margin-bottom:7px">' + esc(p.a) + "</div>" +
+      '<div class="bd">' + esc(p.b) + "</div></div>";
+  }).join("");
+
+  /* 从搜索跳转带锚点时高亮 */
+  if (location.hash) {
+    setTimeout(function () {
+      var el;
+      try { el = document.getElementById(decodeURIComponent(location.hash.slice(1))); } catch (e) { el = null; }
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.add("srch-hit");
+        setTimeout(function () { el.classList.remove("srch-hit"); }, 2200); }
+    }, 100);
+  }
+})();
+</script>
+</body>
+</html>

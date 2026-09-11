@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>互动实验室 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="18 个可操作的统计互动模型：直觉化调参、实时出图、附带结论解读与常见误区提示。">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header data-topbar></header>
+
+<main class="wrap page" role="main">
+  <div class="split">
+
+    <!-- ============ 左：实验列表 ============ -->
+    <aside class="card panel" style="padding:16px 14px">
+      <div class="sect-title">实验模块</div>
+      <input type="text" id="labSearch" placeholder="搜索实验 / 知识点…">
+      <div class="chips mt10" id="labFilter">
+        <button class="chip active" data-v="all">全部</button>
+        <button class="chip" data-v="3">核心难点</button>
+        <button class="chip" data-v="1">入门</button>
+      </div>
+      <div class="dashed"></div>
+      <div class="tree" id="labTree"></div>
+      <div class="dashed"></div>
+      <div class="note">
+        <b>快捷键</b><br>
+        <span class="mono">Alt + ←</span> 上一个实验 ·
+        <span class="mono">Alt + →</span> 下一个<br>
+        <span class="mono">Ctrl + K</span> 全站搜索
+      </div>
+    </aside>
+
+    <!-- ============ 右：实验舞台 ============ -->
+    <section class="stack" style="min-width:0">
+      <div class="card lab-head" style="display:block" id="labHead"></div>
+      <div id="labRoot"></div>
+      <div class="card" id="labFoot"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer data-footer></footer>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/content-a.js"></script>
+<script src="assets/js/content-b.js"></script>
+<script src="assets/js/library.js"></script>
+<script src="assets/js/site.js"></script>
+<script src="assets/js/lab-core.js"></script>
+<script src="assets/js/lab-set1.js"></script>
+<script src="assets/js/lab-set2.js"></script>
+<script src="assets/js/lab-set3.js"></script>
+<script src="assets/js/lab-set4.js"></script>
+<script src="assets/js/lab-set5.js"></script>
+<script src="assets/js/lab-set6.js"></script>
+<script src="assets/js/lab-set7.js"></script>
+<script src="assets/js/lab-set8.js"></script>
+<script src="assets/js/lab-set9.js"></script>
+<script src="assets/js/lab-set10.js"></script>
+<script>
+(function () {
+  "use strict";
+  var U = window.SITE_UI, LAB = window.LAB, esc = U.esc,
+      MOD = window.LAB_MODULES || [], CH = window.CHAPTERS || [];
+  var cur = null, filter = "all", q = "";
+
+  function meta(id) { return MOD.filter(function (m) { return m.id === id; })[0] || null; }
+
+  /* 模块 → 关联章节（从章节的 lab 字段反查） */
+  function chaptersOf(id) {
+    return CH.filter(function (c) { return (c.lab || []).indexOf(id) >= 0; });
+  }
+
+  /* ---------------- 左侧列表 ---------------- */
+  function renderTree() {
+    var list = MOD.filter(function (m) {
+      if (filter === "3" && m.diff !== 3) return false;
+      if (filter === "1" && m.diff !== 1) return false;
+      if (q) {
+        var hay = (m.name + m.desc + m.key + m.tags.join(" ")).toLowerCase();
+        if (hay.indexOf(q.toLowerCase()) < 0) return false;
+      }
+      return true;
+    });
+    U.$("#labTree").innerHTML = list.length ? list.map(function (m) {
+      var ok = !!LAB.modules[m.id];
+      return '<a href="#' + m.id + '" data-id="' + m.id + '"' + (m.id === cur ? ' class="active"' : "") +
+        (ok ? "" : ' style="opacity:.5" title="模块未注册"') + ">" +
+        '<span class="no">' + m.no + "</span>" +
+        '<span style="flex:1;min-width:0">' + esc(m.name.split("实验室")[0] || m.name) + "</span>" +
+        (m.diff === 3 ? '<span class="key-dot" title="核心难点"></span>' : "") + "</a>";
+    }).join("") : '<div class="mut fs13 tc" style="padding:20px">没有匹配的实验</div>';
+  }
+
+  /* ---------------- 右侧渲染 ---------------- */
+  function renderLab(id) {
+    var m = meta(id) || MOD[0];
+    if (!m) return;
+    cur = m.id;
+    renderTree();
+
+    var idx = MOD.indexOf(m), prev = MOD[idx - 1], next = MOD[idx + 1];
+    var chs = chaptersOf(m.id);
+
+    U.$("#labHead").innerHTML =
+      '<div class="row" style="gap:8px">' +
+      '<span class="badge acc">实验 ' + m.no + " / " + MOD.length + "</span>" +
+      '<span class="stars" title="难度 ' + m.diff + '/3"><span class="on">' + "★".repeat(m.diff) +
+      '</span><span class="off">' + "★".repeat(3 - m.diff) + "</span></span>" +
+      '<span class="spacer"></span>' +
+      '<button class="btn sm" id="labPrev"' + (prev ? "" : " disabled") + ">← 上一个</button>" +
+      '<button class="btn sm" id="labNext"' + (next ? "" : " disabled") + ">下一个 →</button>" +
+      "</div>" +
+      '<h1 style="margin-top:10px">' + esc(m.name) + "</h1>" +
+      '<p>' + esc(m.desc) + "</p>" +
+      '<div class="tags">' + m.tags.map(function (t) { return '<span class="badge">' + t + "</span>"; }).join("") +
+      chs.map(function (c) {
+        return '<a class="badge purple" href="chapters.html#' + c.id + '" style="text-decoration:none">第 ' + c.no + " 章 · " + esc(c.title) + "</a>";
+      }).join("") + "</div>";
+
+    LAB.render(m.id, U.$("#labRoot"));
+
+    U.$("#labFoot").innerHTML =
+      '<div class="card-h"><h2>这个实验想看什么</h2><span class="spacer"></span>' +
+      '<span class="badge warn">动手前先猜一猜结果</span></div>' +
+      '<div class="callout info"><span class="ttl">本实验的关键</span>' + esc(m.key) + "</div>" +
+      '<div class="grid g2 mt14">' +
+      '<div class="callout"><span class="ttl">建议这样用</span>' +
+      '先按默认参数看一遍结果 → 单独改动<b>一个</b>参数，观察哪个数字变了 → 再改回来，说清因果。' +
+      '一次改多个参数，会看不清是谁造成的。</div>' +
+      '<div class="callout"><span class="ttl">教学提示</span>' +
+      '让学生先写下预测值，再拖动滑块验证。预测与结果的落差，是最有效的记忆点。</div>' +
+      "</div>";
+
+    var b1 = U.$("#labPrev"), b2 = U.$("#labNext");
+    if (b1 && prev) b1.addEventListener("click", function () { location.hash = prev.id; });
+    if (b2 && next) b2.addEventListener("click", function () { location.hash = next.id; });
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function route() {
+    var id = (location.hash || "").replace("#", "");
+    if (U.param("m")) id = U.param("m");
+    if (!meta(id)) id = MOD[0] ? MOD[0].id : "";
+    // 用 hash 记状态，但不要触发重复渲染（某些环境不允许改 history，需容错）
+    try {
+      if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+    } catch (err) { }
+    renderLab(id);
+  }
+
+  U.$("#labFilter").addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    filter = b.dataset.v;
+    U.$$("#labFilter .chip").forEach(function (x) { x.classList.toggle("active", x === b); });
+    renderTree();
+  });
+
+  var timer = null;
+  U.$("#labSearch").addEventListener("input", function (e) {
+    clearTimeout(timer);
+    var v = e.target.value.trim();
+    timer = setTimeout(function () { q = v; renderTree(); }, 160);
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (!e.altKey) return;
+    var idx = MOD.map(function (m) { return m.id; }).indexOf(cur);
+    if (e.key === "ArrowLeft" && idx > 0) { e.preventDefault(); location.hash = MOD[idx - 1].id; }
+    if (e.key === "ArrowRight" && idx < MOD.length - 1) { e.preventDefault(); location.hash = MOD[idx + 1].id; }
+  });
+
+  window.addEventListener("hashchange", route);
+  route();
+
+  /* 切换主题后重绘当前模块（图表取色依赖主题变量） */
+  document.addEventListener("site:ready", function () {
+    U.$$("[data-theme-toggle]").forEach(function (b) {
+      b.addEventListener("click", function () { setTimeout(function () { if (cur) renderLab(cur); }, 60); });
+    });
+  });
+})();
+</script>
+</body>
+</html>

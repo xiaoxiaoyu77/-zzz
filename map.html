@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>知识地图 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="六篇 14 章 + 拓展三篇的全景结构图，含重难点分布、章节依赖关系与方法选择主线。">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header data-topbar></header>
+
+<main class="wrap page" role="main">
+
+  <div class="lab-head">
+    <div>
+      <h1>知识地图</h1>
+      <p>全书六篇 14 章 + 拓展三篇的全景结构。先在这里定位自己，再进入具体章节——每张卡片标注了知识点数量、
+        重难点数量与最高难度等级，点开即跳到对应章节。</p>
+    </div>
+    <span class="spacer"></span>
+    <div class="row">
+      <span class="badge danger">★ 核心难点</span>
+      <span class="badge warn">★★ 需掌握</span>
+      <span class="badge ok">★★★ 了解即可</span>
+    </div>
+  </div>
+
+  <!-- 三条主线 -->
+  <section class="grid g3 mt18">
+    <div class="card">
+      <div class="card-h"><span class="badge acc">主线一</span><h3 style="margin:0">描述数据</h3></div>
+      <div class="mut fs13">把一堆原始数据压缩成少数几个能说明问题的数字：集中趋势、离散程度、分布形态。不涉及推断，结论不超出这批数据。</div>
+      <div class="note mt10">对应：第 1–4 章</div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="badge purple">主线二</span><h3 style="margin:0">用样本推断总体</h3></div>
+      <div class="mut fs13">抽样分布、参数估计、假设检验、方差分析、卡方。全书重难点最密集的区间，核心是「不确定性有多大」。</div>
+      <div class="note mt10">对应：第 5–9 章、第 12 章</div>
+    </div>
+    <div class="card">
+      <div class="card-h"><span class="badge ok">主线三</span><h3 style="margin:0">判断关系与预测</h3></div>
+      <div class="mut fs13">相关、回归、信度效度与聚类分析，以及非参数检验、统计软件实操与研究报告规范。从「有没有关系」到「能不能预测」。</div>
+      <div class="note mt10">对应：第 10–11 章、第 13–17 章</div>
+    </div>
+  </section>
+
+  <!-- 筛选 -->
+  <section class="card mt18">
+    <div class="row">
+      <span class="mut fs13">筛选：</span>
+      <div class="chips" id="mapFilter">
+        <button class="chip active" data-v="all">全部章节</button>
+        <button class="chip" data-v="key">只看含重难点的章</button>
+        <button class="chip" data-v="hard">只看核心难点章</button>
+        <button class="chip" data-v="lab">只看有配套实验的章</button>
+      </div>
+      <span class="spacer"></span>
+      <span class="faint fs12 mono" id="mapCount"></span>
+    </div>
+  </section>
+
+  <!-- 地图本体 -->
+  <div id="kmBody" class="mt24"></div>
+
+  <!-- 依赖关系说明 -->
+  <section class="card pad-l mt24">
+    <div class="card-h"><h2>章节之间的依赖关系</h2><span class="spacer"></span><span class="badge warn">跳章学容易卡住的地方</span></div>
+    <div class="grid g2">
+      <div class="prose">
+        <h4>必须先打好的地基</h4>
+        <ul>
+          <li><b>第 3 章（用数字描述分布）</b> → 不懂标准差，第 7 章的标准误就是天书。</li>
+          <li><b>第 5 章（概率与概率分布）</b> → 后面所有检验的临界值与 p 值都建立在正态分布曲线面积上。</li>
+          <li><b>第 6 章（样本统计量的概率分布）</b> → 全书分水岭。这一章通了，第 7–9 章与第 12 章都是它的展开。</li>
+        </ul>
+        <h4>容易反向依赖的坑</h4>
+        <ul>
+          <li>直接学第 8 章假设检验、跳过第 6 章，会变成「背流程、不懂含义」。</li>
+          <li>学第 11 章回归却不熟第 10 章相关系数，会分不清 r 与 b 各自说明什么。</li>
+        </ul>
+      </div>
+      <div class="prose">
+        <h4>建议的推进顺序</h4>
+        <div class="subst" style="margin-top:6px">
+          <div><span class="lbl">第一轮</span> 1 → 2 → 3 → 4　<b>建立数据感</b></div>
+          <div><span class="lbl">第二轮</span> 5 → 6　<b>打概率与分布地基（慢一点没关系）</b></div>
+          <div><span class="lbl">第三轮</span> 7 → 8 → 9 → 12　<b>推断统计主干</b></div>
+          <div><span class="lbl">第四轮</span> 10 → 11　<b>相关与回归</b></div>
+          <div><span class="lbl">第五轮</span> 13 → 14　<b>测量质量与聚类</b></div>
+          <div><span class="lbl">收尾</span> 15 → 16 → 17　<b>非参数、统计软件与研究报告</b></div>
+        </div>
+        <div class="callout info mt18">
+          <span class="ttl">一条经验</span>
+          第 6 章（样本统计量的概率分布与中心极限定理）值得投入最多时间。它是一个「想通了就永远通」的知识点，
+          配套实验 <a href="lab.html?m=clt">抽样分布与中心极限定理</a> 可以亲手抽 1000 次看清这件事。
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-footer></footer>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/content-a.js"></script>
+<script src="assets/js/content-b.js"></script>
+<script src="assets/js/library.js"></script>
+<script src="assets/js/site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var U = window.SITE_UI, esc = U.esc;
+  var CH = window.CHAPTERS || [], MOD = window.LAB_MODULES || [], PARTS = window.PARTS || [];
+  var filter = "all";
+
+  function labNames(ids) {
+    return (ids || []).map(function (id) {
+      var m = MOD.filter(function (x) { return x.id === id; })[0];
+      return m ? m : null;
+    }).filter(Boolean);
+  }
+  function maxLv(c) {
+    var m = 0;
+    (c.keys || []).forEach(function (k) { m = Math.max(m, k.lv || 1); });
+    return m;
+  }
+  function lvBadge(lv) {
+    var map = { 1: ["ok", "了解"], 2: ["warn", "掌握"], 3: ["danger", "核心难点"] };
+    var x = map[lv] || map[1];
+    return '<span class="badge ' + x[0] + '">★ ' + x[1] + "</span>";
+  }
+
+  function visible(c) {
+    if (filter === "all") return true;
+    if (filter === "key") return (c.keys || []).length > 0;
+    if (filter === "hard") return maxLv(c) === 3;
+    if (filter === "lab") return (c.lab || []).length > 0;
+    return true;
+  }
+
+  function render() {
+    var n = 0, body = PARTS.map(function (p) {
+      var list = CH.filter(function (c) { return c.part === p.id && visible(c); });
+      if (!list.length) return "";
+      n += list.length;
+      var keys = 0; list.forEach(function (c) { keys += (c.keys || []).length; });
+      return '<section class="km-part" id="part' + p.id + '">' +
+        '<div class="km-head"><span class="bar"></span><h3>' + esc(p.name) + "</h3>" +
+        '<span class="cnt">' + list.length + " 章 · " + keys + ' 处重难点</span>' +
+        '<span class="spacer" style="flex:1"></span>' +
+        '<span class="faint fs12">' + esc(p.desc || "") + "</span></div>" +
+        '<div class="km-nodes">' + list.map(function (c) {
+          var labs = labNames(c.lab);
+          return '<a class="km-node" href="chapters.html#' + c.id + '">' +
+            '<div class="h"><span class="no">' + (c.extra ? "拓展" : "CH " + (c.no < 10 ? "0" + c.no : c.no)) + "</span>" +
+            '<span class="nm">' + esc(c.title) + "</span></div>" +
+            '<div class="pts">' + esc(c.sub || "") + "</div>" +
+            '<div class="row mt10" style="gap:6px">' +
+            '<span class="badge">' + (c.points || []).length + " 知识点</span>" +
+            ((c.keys || []).length ? '<span class="badge danger">' + c.keys.length + " 重难点</span>" : '<span class="badge ok">基础章</span>') +
+            (labs.length ? '<span class="badge acc">配套实验 ' + labs.length + "</span>" : "") +
+            "</div>" +
+            '<div class="kp">' + ((c.keys || []).length
+              ? lvBadge(maxLv(c)) + '<span class="mut fs11">' + esc(c.keys[0].t) + "</span>"
+              : '<span class="mut fs11">本章无标注重难点，以理解概念为主</span>') + "</div>" +
+            "</a>";
+        }).join("") + "</div></section>";
+    }).join("");
+
+    U.$("#kmBody").innerHTML = body || '<div class="card tc mut">当前筛选下没有匹配的章节。</div>';
+    U.$("#mapCount").textContent = "显示 " + n + " / " + CH.length + " 章";
+  }
+
+  U.$("#mapFilter").addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    filter = b.dataset.v;
+    U.$$("#mapFilter .chip").forEach(function (x) { x.classList.toggle("active", x === b); });
+    render();
+  });
+
+  render();
+
+  /* 从别页带 hash 跳进来时滚动到对应篇 */
+  if (/^#part\d$/.test(location.hash)) {
+    var t = document.getElementById(location.hash.slice(1));
+    if (t) setTimeout(function () { t.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+  }
+})();
+</script>
+</body>
+</html>

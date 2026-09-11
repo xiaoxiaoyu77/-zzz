@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>案例库 · 新闻传播统计学教学互动平台</title>
+<meta name="description" content="18 个新闻传播真实情境案例：问题出在哪、该用什么统计方法、能得到什么结论。">
+<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+
+<header data-topbar></header>
+
+<main class="wrap page" role="main">
+
+  <div class="lab-head">
+    <div>
+      <h1>案例库</h1>
+      <p>每个案例都来自新闻传播研究的真实场景：先看现象和困惑，再看该用哪个统计方法，
+        最后看这个方法的边界在哪里。案例与互动实验、章节内容相互链接，可以顺着一条线学下去。</p>
+    </div>
+    <span class="spacer"></span>
+    <span class="badge acc" id="caseCount"></span>
+  </div>
+
+  <section class="card mt18">
+    <div class="row">
+      <span class="mut fs13">按主题筛选：</span>
+      <div class="chips" id="caseFilter"></div>
+      <span class="spacer"></span>
+      <input type="text" id="caseSearch" placeholder="搜索案例关键词…" style="max-width:230px">
+    </div>
+  </section>
+
+  <div class="grid g2 mt18" id="caseGrid"></div>
+
+  <section class="card pad-l mt24">
+    <div class="card-h"><h2>读案例的方法：每次都问这五个问题</h2></div>
+    <div class="grid g3">
+      <div class="callout info"><span class="ttl">① 研究对象是谁</span>样本怎么来的？是概率抽样还是便利样本？结论能推广到哪一层？</div>
+      <div class="callout info"><span class="ttl">② 变量是什么尺度</span>定类、定序、定距还是定比？尺度直接决定可用方法。</div>
+      <div class="callout info"><span class="ttl">③ 设计是什么</span>随机分配的实验，还是观察既有差异的调查？这决定能不能谈因果。</div>
+      <div class="callout info"><span class="ttl">④ 效应有多大</span>除 p 值外，效应量与置信区间说明了差异的实际分量。</div>
+      <div class="callout info"><span class="ttl">⑤ 有什么替代解释</span>有没有混淆变量？有没有可能是反向因果或共同原因？</div>
+      <div class="callout warn"><span class="ttl">最常见的误读</span>把「统计上不显著」读成「没有差别」；把「相关」读成「因果」；只报 p 值不报效应量。</div>
+    </div>
+  </section>
+
+</main>
+
+<footer data-footer></footer>
+
+<script src="assets/js/stats.js"></script>
+<script src="assets/js/content-a.js"></script>
+<script src="assets/js/content-b.js"></script>
+<script src="assets/js/library.js"></script>
+<script src="assets/js/site.js"></script>
+<script>
+(function () {
+  "use strict";
+  var U = window.SITE_UI, esc = U.esc;
+  var CAS = window.CASES || [], CH = window.CHAPTERS || [], MOD = window.LAB_MODULES || [];
+  var tag = "all", q = "";
+
+  var tags = ["all"].concat(CAS.map(function (c) { return c.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
+  U.$("#caseFilter").innerHTML = tags.map(function (t) {
+    return '<button class="chip' + (t === "all" ? " active" : "") + '" data-v="' + esc(t) + '">' +
+      (t === "all" ? "全部" : esc(t)) + "</button>";
+  }).join("");
+
+  function chapterOf(no) { return CH.filter(function (c) { return c.no === no; })[0]; }
+  function moduleOf(id) { return MOD.filter(function (m) { return m.id === id; })[0]; }
+
+  function render() {
+    var list = CAS.filter(function (c) {
+      if (tag !== "all" && c.tag !== tag) return false;
+      if (q) {
+        var hay = (c.title + c.problem + c.method + c.insight + c.tag + c.scene).toLowerCase();
+        if (hay.indexOf(q.toLowerCase()) < 0) return false;
+      }
+      return true;
+    });
+
+    U.$("#caseCount").textContent = "共 " + CAS.length + " 个案例 · 当前显示 " + list.length;
+    U.$("#caseGrid").innerHTML = list.length ? list.map(function (c) {
+      var ch = chapterOf(c.ch), m = c.lab ? moduleOf(c.lab) : null;
+      return '<article class="case-card" id="' + c.id + '">' +
+        '<div class="hd"><span class="badge acc">案例 ' + c.ch + "</span>" +
+        '<span class="badge">' + esc(c.tag) + "</span>" +
+        '<span class="badge purple">' + esc(c.scene) + "</span></div>" +
+        '<div class="k" style="font-size:15.5px;font-weight:650;margin-bottom:10px">' + esc(c.title) + "</div>" +
+        '<div class="bd">' +
+        '<p style="margin:0 0 9px"><b>现象与困惑：</b>' + esc(c.problem) + "</p>" +
+        '<p style="margin:0 0 9px"><b>用到的方法：</b>' + esc(c.method) + "</p>" +
+        '<div class="callout ok" style="margin-bottom:0"><span class="ttl">结论与提醒</span>' + esc(c.insight) + "</div>" +
+        "</div>" +
+        '<div class="ft">' +
+        (ch ? '<a class="btn sm" href="chapters.html#' + ch.id + '">' + (ch.extra ? "" : "第 " + ch.no + " 章 · ") + esc(ch.title) + "</a>" : "") +
+        (m ? '<a class="btn sm ok" href="lab.html?m=' + m.id + '">动手做：实验 ' + m.no + "</a>" : "") +
+        "</div></article>";
+    }).join("") : '<div class="card tc mut">没有匹配的案例，换个关键词试试。</div>';
+  }
+
+  U.$("#caseFilter").addEventListener("click", function (e) {
+    var b = e.target.closest(".chip"); if (!b) return;
+    tag = b.dataset.v;
+    U.$$("#caseFilter .chip").forEach(function (x) { x.classList.toggle("active", x === b); });
+    render();
+  });
+
+  var timer = null;
+  U.$("#caseSearch").addEventListener("input", function (e) {
+    clearTimeout(timer);
+    var v = e.target.value.trim();
+    timer = setTimeout(function () { q = v; render(); }, 160);
+  });
+
+  render();
+
+  /* 从搜索跳过来带锚点时高亮 */
+  if (location.hash) {
+    setTimeout(function () {
+      var el = document.querySelector(location.hash);
+      if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.add("srch-hit");
+        setTimeout(function () { el.classList.remove("srch-hit"); }, 2200); }
+    }, 80);
+  }
+})();
+</script>
+</body>
+</html>
